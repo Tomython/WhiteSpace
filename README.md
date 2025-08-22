@@ -26,12 +26,5 @@ The goal of WhiteSpace is to combine the ease of open communication with the sec
 ---
 
 ## 🚀 Installation & Run
-```bash
-# Clone the repository
-git clone https://github.com/Tomython/WhiteSpace.git
 
-# Navigate to project folder
-cd WhiteSpace
-
-# Run with Docker (in development)
-docker compose up --build
+coming soon
