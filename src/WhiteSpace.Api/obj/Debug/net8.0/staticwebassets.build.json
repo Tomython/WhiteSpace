@@ -1,11 +1,39 @@
 {
   "Version": 1,
-  "Hash": "3HV8IiZyRhNUHBu4pg8yS4aLoZdV5yGwg68jEisv+3M=",
+  "Hash": "46hnE2vxxXQ0PqQDwRgOxO+LgAOciRg0mtLk3XkIBgU=",
   "Source": "WhiteSpace.Api",
   "BasePath": "_content/WhiteSpace.Api",
   "Mode": "Default",
   "ManifestType": "Build",
   "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
-  "Assets": []
+  "DiscoveryPatterns": [
+    {
+      "Name": "WhiteSpace.Api/wwwroot",
+      "Source": "WhiteSpace.Api",
+      "ContentRoot": "/Users/tomython/Documents/Visual Studio Code Project/WhiteSpace/src/WhiteSpace.Api/wwwroot/",
+      "BasePath": "_content/WhiteSpace.Api",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": [
+    {
+      "Identity": "/Users/tomython/Documents/Visual Studio Code Project/WhiteSpace/src/WhiteSpace.Api/wwwroot/smoke.html",
+      "SourceId": "WhiteSpace.Api",
+      "SourceType": "Discovered",
+      "ContentRoot": "/Users/tomython/Documents/Visual Studio Code Project/WhiteSpace/src/WhiteSpace.Api/wwwroot/",
+      "BasePath": "_content/WhiteSpace.Api",
+      "RelativePath": "smoke.html",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot/smoke.html"
+    }
+  ]
 }

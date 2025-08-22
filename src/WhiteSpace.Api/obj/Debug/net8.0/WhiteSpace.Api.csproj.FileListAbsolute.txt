@@ -171,3 +171,7 @@
 /Users/tomython/Documents/Visual Studio Code Project/WhiteSpace/src/WhiteSpace.Api/obj/Debug/net8.0/WhiteSpace.Api.pdb
 /Users/tomython/Documents/Visual Studio Code Project/WhiteSpace/src/WhiteSpace.Api/obj/Debug/net8.0/WhiteSpace.Api.genruntimeconfig.cache
 /Users/tomython/Documents/Visual Studio Code Project/WhiteSpace/src/WhiteSpace.Api/obj/Debug/net8.0/ref/WhiteSpace.Api.dll
+/Users/tomython/Documents/Visual Studio Code Project/WhiteSpace/src/WhiteSpace.Api/bin/Debug/net8.0/Microsoft.Extensions.Diagnostics.Abstractions.dll
+/Users/tomython/Documents/Visual Studio Code Project/WhiteSpace/src/WhiteSpace.Api/bin/Debug/net8.0/Microsoft.Extensions.Hosting.Abstractions.dll
+/Users/tomython/Documents/Visual Studio Code Project/WhiteSpace/src/WhiteSpace.Api/bin/Debug/net8.0/Microsoft.Extensions.WebEncoders.dll
+/Users/tomython/Documents/Visual Studio Code Project/WhiteSpace/src/WhiteSpace.Api/bin/Debug/net8.0/WhiteSpace.Api.staticwebassets.runtime.json

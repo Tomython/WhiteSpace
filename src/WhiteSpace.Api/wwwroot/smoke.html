@@ -1,0 +1,195 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>WhiteSpace — smoke test</title>
+<style>
+  body { font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 900px; margin: 24px auto; }
+  section { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 12px 0; }
+  h2 { margin: 0 0 8px; font-size: 16px; }
+  label { display: inline-flex; gap: 8px; align-items: center; margin: 4px 8px 4px 0; }
+  input, textarea { padding: 6px 8px; border: 1px solid #ccc; border-radius: 8px; }
+  button { padding: 6px 10px; border: 1px solid #ccc; border-radius: 10px; cursor: pointer; background: #fafafa; }
+  ul { padding-left: 18px; }
+  code { background: #f5f5f5; padding: 2px 6px; border-radius: 6px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .small { font-size: 12px; color: #666; }
+</style>
+
+<h1>WhiteSpace — smoke test</h1>
+<p class="small">Работает на том же origin (http://localhost:5147), поэтому без CORS-геморроя.</p>
+
+<section>
+  <h2>Auth</h2>
+  <div class="row">
+    <label>Username <input id="u" value="tom"></label>
+    <label>Email <input id="e" value="t@e"></label>
+    <label>Password <input id="p" type="password" value="pass"></label>
+    <button id="reg">Register</button>
+    <button id="login">Login</button>
+  </div>
+  <div>Token: <code id="tok">(none)</code></div>
+</section>
+
+<section>
+  <h2>Posts</h2>
+  <div class="row">
+    <textarea id="body" rows="3" cols="50" placeholder="post...">hello world</textarea>
+    <button id="mkpost">Create post</button>
+    <button id="feed">Load feed</button>
+  </div>
+  <ul id="feedList"></ul>
+</section>
+
+<section>
+  <h2>Comments & Likes (выбери пост из фида)</h2>
+  <div>Selected Post ID: <code id="selPost">—</code></div>
+  <div class="row">
+    <textarea id="cbody" rows="2" cols="40" placeholder="comment...">first!</textarea>
+    <button id="mkcomment">Add comment</button>
+    <button id="like">Like</button>
+    <button id="unlike">Unlike</button>
+    <button id="loadcomments">Load comments</button>
+  </div>
+  <ul id="comments"></ul>
+</section>
+
+<section>
+  <h2>Channels</h2>
+  <div class="row">
+    <label>Name <input id="chname" value="concordia"></label>
+    <label>Private? <input id="chpriv" type="checkbox" checked></label>
+    <button id="mkch">Create channel</button>
+  </div>
+  <div>Created: <span id="chinfo" class="small">—</span></div>
+  <div class="row" style="margin-top:8px">
+    <label>Join code <input id="joincode"></label>
+    <button id="join">Join by code</button>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <label>Channel ID <input id="chid"></label>
+    <button id="getch">Get channel</button>
+  </div>
+  <pre id="out" class="small"></pre>
+</section>
+
+<script>
+const BASE = "";
+let token = "";
+let selectedPostId = "";
+
+const $ = s => document.querySelector(s);
+const out = x => $("#out").textContent = typeof x === 'string' ? x : JSON.stringify(x, null, 2);
+
+async function call(path, method="GET", body=null, auth=false) {
+  const r = await fetch(BASE + path, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...(auth && token ? { Authorization: `Bearer ${token}` } : {})
+    },
+    body: body ? JSON.stringify(body) : null
+  });
+  const text = await r.text();
+  let data;
+  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+  if (!r.ok) throw { status: r.status, data };
+  return data;
+}
+
+reg.onclick = async () => {
+  try {
+    const r = await call("/auth/register", "POST", { username: u.value, email: e.value, password: p.value });
+    out(r);
+  } catch (err) { out(err); }
+};
+
+login.onclick = async () => {
+  try {
+    const r = await call("/auth/login", "POST", { usernameOrEmail: u.value, password: p.value });
+    token = r.token || "";
+    $("#tok").textContent = token ? token.slice(0, 24) + "…" : "(none)";
+    out(r);
+  } catch (err) { out(err); }
+};
+
+mkpost.onclick = async () => {
+  try {
+    const r = await call("/posts", "POST", { body: body.value }, true);
+    out(r);
+    await loadFeed();
+  } catch (err) { out(err); }
+};
+
+feed.onclick = async () => { await loadFeed(); };
+
+async function loadFeed() {
+  try {
+    const list = await call("/feed");
+    const ul = $("#feedList");
+    ul.innerHTML = "";
+    list.forEach(it => {
+      const li = document.createElement("li");
+      li.textContent = `${it.createdAt} — @${it.author}: ${it.body}`;
+      li.style.cursor = "pointer";
+      li.onclick = () => { selectedPostId = it.id; $("#selPost").textContent = selectedPostId; };
+      ul.appendChild(li);
+    });
+    out(list);
+  } catch (err) { out(err); }
+}
+
+mkcomment.onclick = async () => {
+  if (!selectedPostId) return out("select a post from feed first");
+  try {
+    const r = await call(`/posts/${selectedPostId}/comments`, "POST", { body: cbody.value }, true);
+    out(r);
+    await loadComments();
+  } catch (err) { out(err); }
+};
+
+loadcomments.onclick = async () => { await loadComments(); };
+
+async function loadComments() {
+  if (!selectedPostId) return out("select a post from feed first");
+  try {
+    const list = await call(`/posts/${selectedPostId}/comments`);
+    const ul = $("#comments");
+    ul.innerHTML = "";
+    list.forEach(c => {
+      const li = document.createElement("li");
+      li.textContent = `${c.createdAt} — @${c.author}: ${c.body}`;
+      ul.appendChild(li);
+    });
+    out(list);
+  } catch (err) { out(err); }
+}
+
+like.onclick = async () => {
+  if (!selectedPostId) return out("select a post from feed first");
+  try { out(await call(`/posts/${selectedPostId}/like`, "POST", null, true)); } catch (err) { out(err); }
+};
+unlike.onclick = async () => {
+  if (!selectedPostId) return out("select a post from feed first");
+  try { out(await call(`/posts/${selectedPostId}/like`, "DELETE", null, true)); } catch (err) { out(err); }
+};
+
+mkch.onclick = async () => {
+  try {
+    const r = await call("/channels", "POST", { name: chname.value, isPrivate: chpriv.checked }, true);
+    $("#chinfo").textContent = JSON.stringify(r);
+    $("#chid").value = r.id || "";
+    $("#joincode").value = r.code || "";
+    out(r);
+  } catch (err) { out(err); }
+};
+
+join.onclick = async () => {
+  try {
+    const r = await call("/channels/join", "POST", { code: $("#joincode").value }, true);
+    out(r);
+  } catch (err) { out(err); }
+};
+
+getch.onclick = async () => {
+  try { out(await call(`/channels/${$("#chid").value}`, "GET", null, true)); } catch (err) { out(err); }
+};
+</script>

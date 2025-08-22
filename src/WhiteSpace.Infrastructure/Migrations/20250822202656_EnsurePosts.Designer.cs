@@ -11,8 +11,8 @@ using WhiteSpace.Infrastructure;
 namespace WhiteSpace.Infrastructure.Migrations
 {
     [DbContext(typeof(WhiteSpaceDbContext))]
-    [Migration("20250820180951_AddPosts")]
-    partial class AddPosts
+    [Migration("20250822202656_EnsurePosts")]
+    partial class EnsurePosts
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

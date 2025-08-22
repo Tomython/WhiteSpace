@@ -1,0 +1,25 @@
+{
+  "Files": [
+    {
+      "Id": "/Users/tomython/Documents/Visual Studio Code Project/WhiteSpace/src/WhiteSpace.Api/wwwroot/smoke.html",
+      "PackagePath": "staticwebassets/smoke.html"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.WhiteSpace.Api.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.build.WhiteSpace.Api.props",
+      "PackagePath": "build\\WhiteSpace.Api.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.buildMultiTargeting.WhiteSpace.Api.props",
+      "PackagePath": "buildMultiTargeting\\WhiteSpace.Api.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.buildTransitive.WhiteSpace.Api.props",
+      "PackagePath": "buildTransitive\\WhiteSpace.Api.props"
+    }
+  ],
+  "ElementsToRemove": []
+}
