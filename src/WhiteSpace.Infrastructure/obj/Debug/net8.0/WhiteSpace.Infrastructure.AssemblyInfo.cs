@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WhiteSpace.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0c2203a6f806442bb8dd051ed210118c6e1ee69a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7ed59b2f9ec4c4415b66046d4112e9406f151083")]
 [assembly: System.Reflection.AssemblyProductAttribute("WhiteSpace.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WhiteSpace.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

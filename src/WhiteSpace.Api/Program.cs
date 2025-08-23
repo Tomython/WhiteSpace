@@ -9,6 +9,10 @@ using Microsoft.IdentityModel.Tokens;
 using WhiteSpace.Domain;
 using WhiteSpace.Infrastructure;
 using System.Text.Json.Serialization;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.OpenApi.Models;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 
 // ---- services ----
 var builder = WebApplication.CreateBuilder(args);
@@ -37,14 +41,46 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddCors(opt =>
 {
-    opt.AddPolicy("dev", p => p
-        .AllowAnyOrigin()
-        .AllowAnyHeader()
-        .AllowAnyMethod());
+  opt.AddPolicy("dev", p => p
+      .AllowAnyOrigin()
+      .AllowAnyHeader()
+      .AllowAnyMethod());
+});
+
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "WhiteSpace API", Version = "v1" });
+
+    // JWT auth в Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme {
+        In = ParameterLocation.Header,
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "Вставь токен без 'Bearer '"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement {
+        { new OpenApiSecurityScheme{ Reference = new OpenApiReference{
+              Type = ReferenceType.SecurityScheme, Id = "Bearer"}}, Array.Empty<string>() }
+    });
+});
+
+builder.Services.AddRateLimiter(o =>
+{
+    o.AddFixedWindowLimiter("api", options =>
+    {
+        options.PermitLimit = 60;                 // 60 запросов
+        options.Window = TimeSpan.FromMinutes(1); // в минуту
+        options.QueueLimit = 0;
+    });
 });
 
 var app = builder.Build();
 
+app.UseRateLimiter();
 app.UseCors("dev");
 app.UseDefaultFiles();
 app.UseStaticFiles();
@@ -52,10 +88,21 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
+
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
 // ==== CHANNELS ====
 
 app.MapPost("/channels", async (ChannelCreate req, ClaimsPrincipal me, WhiteSpaceDbContext db) =>
 {
+    var (ok, errors) = Validate(req);
+    if (!ok) return Results.ValidationProblem(errors);
+
     var uidStr = me.FindFirstValue(ClaimTypes.NameIdentifier);
     if (string.IsNullOrEmpty(uidStr)) return Results.Unauthorized();
     var ownerId = Guid.Parse(uidStr);
@@ -82,6 +129,9 @@ app.MapPost("/channels", async (ChannelCreate req, ClaimsPrincipal me, WhiteSpac
 
 app.MapPost("/channels/join", async (JoinByCode req, ClaimsPrincipal me, WhiteSpaceDbContext db) =>
 {
+    var (ok, errors) = Validate(req);
+    if (!ok) return Results.ValidationProblem(errors);
+
     var uidStr = me.FindFirstValue(ClaimTypes.NameIdentifier);
     if (string.IsNullOrEmpty(uidStr)) return Results.Unauthorized();
     var userId = Guid.Parse(uidStr);
@@ -121,6 +171,9 @@ app.MapGet("/channels/{id:guid}", async (Guid id, ClaimsPrincipal me, WhiteSpace
 
 app.MapPost("/posts/{id:guid}/comments", async (Guid id, CommentCreate req, ClaimsPrincipal me, WhiteSpaceDbContext db) =>
 {
+    var (ok, errors) = Validate(req);
+    if (!ok) return Results.ValidationProblem(errors);
+
     var uidStr = me.FindFirstValue(ClaimTypes.NameIdentifier);
     if (string.IsNullOrEmpty(uidStr)) return Results.Unauthorized();
     var userId = Guid.Parse(uidStr);
@@ -198,6 +251,9 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.MapPost("/auth/register", async (RegisterRequest req, WhiteSpaceDbContext db) =>
 {
+    var (ok, errors) = Validate(req);
+    if (!ok) return Results.ValidationProblem(errors);
+
     var exists = await db.Users.AnyAsync(u => u.Username == req.Username || u.Email == req.Email);
     if (exists) return Results.Conflict(new { message = "User exists" });
 
@@ -217,6 +273,9 @@ app.MapPost("/auth/register", async (RegisterRequest req, WhiteSpaceDbContext db
 
 app.MapPost("/auth/login", async (LoginRequest req, WhiteSpaceDbContext db) =>
 {
+    var (ok, errors) = Validate(req);
+    if (!ok) return Results.ValidationProblem(errors);
+
     var user = await db.Users.FirstOrDefaultAsync(u =>
         u.Username == req.UsernameOrEmail || u.Email == req.UsernameOrEmail);
     if (user is null) return Results.Unauthorized();
@@ -229,6 +288,9 @@ app.MapPost("/auth/login", async (LoginRequest req, WhiteSpaceDbContext db) =>
 
 app.MapPost("/posts", async (PostCreate req, ClaimsPrincipal me, WhiteSpaceDbContext db) =>
 {
+    var (ok, errors) = Validate(req);
+    if (!ok) return Results.ValidationProblem(errors);
+
     var userIdStr = me.FindFirstValue(ClaimTypes.NameIdentifier);
     if (string.IsNullOrEmpty(userIdStr)) return Results.Unauthorized();
 
@@ -257,55 +319,85 @@ app.MapGet("/feed", async (WhiteSpaceDbContext db) =>
 
 app.Run();
 
-// ---- types & helpers (После app.Run!) ----
+public partial class Program
+{  // для WebApplicationFactory
 
-record RegisterRequest(string Username, string Email, string Password);
-record LoginRequest(string UsernameOrEmail, string Password);
-record PostCreate([property: JsonPropertyName("body")] string Body);
-record PostDto(Guid Id, string Author, string Body, DateTime CreatedAt);
+  // ---- types & helpers (После app.Run!) ----
 
-record ChannelCreate([property: JsonPropertyName("name")] string Name,
-                     [property: JsonPropertyName("isPrivate")] bool IsPrivate);
-
-record JoinByCode([property: JsonPropertyName("code")] string Code);
-
-record CommentCreate([property: JsonPropertyName("body")] string Body);
-
-static class CodeGen
-{
-  public static string Secret(int len)
+  static (bool ok, Dictionary<string, string[]> errors) Validate<T>(T model)
   {
-    const string alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-    var rng = Random.Shared;
-    return new string(Enumerable.Range(0, len)
-               .Select(_ => alphabet[rng.Next(alphabet.Length)]).ToArray());
+    var ctx = new ValidationContext(model!);
+    var results = new List<ValidationResult>();
+    var ok = Validator.TryValidateObject(model!, ctx, results, validateAllProperties: true);
+
+    var errors = results
+        .SelectMany(r => (r.MemberNames.Any() ? r.MemberNames : new[] { "" })
+            .Select(m => (Member: m, r.ErrorMessage ?? "invalid")))
+        .GroupBy(x => x.Member)
+        .ToDictionary(g => g.Key, g => g.Select(x => x.Item2).ToArray());
+
+    return (ok, errors);
   }
-}
 
-static class JwtHelper
-{
-  public static string CreateToken(User user, IConfiguration config)
+  record RegisterRequest(
+      [property: Required, MinLength(3), MaxLength(32)]
+    string Username,
+      [property: Required, EmailAddress, MaxLength(256)]
+    string Email,
+      [property: Required, MinLength(4), MaxLength(64)]
+    string Password);
+
+  record LoginRequest(
+      [property: Required] string UsernameOrEmail,
+      [property: Required] string Password);
+
+  record PostCreate([property: JsonPropertyName("body"), Required, MinLength(1), MaxLength(4000)] string Body);
+  record PostDto(Guid Id, string Author, string Body, DateTime CreatedAt);
+
+  record ChannelCreate(
+      [property: JsonPropertyName("name"), Required, MinLength(1), MaxLength(64)] string Name,
+      [property: JsonPropertyName("isPrivate")] bool IsPrivate);
+
+  record JoinByCode([property: JsonPropertyName("code"), Required, MinLength(4), MaxLength(24)] string Code);
+
+  record CommentCreate([property: JsonPropertyName("body"), Required, MinLength(1), MaxLength(1000)] string Body);
+
+  static class CodeGen
   {
-    var issuer = config["Auth:JwtIssuer"]!;
-    var audience = config["Auth:JwtAudience"]!;
-    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Auth:JwtKey"]!));
-    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-    var claims = new[]
+    public static string Secret(int len)
     {
+      const string alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+      var rng = Random.Shared;
+      return new string(Enumerable.Range(0, len)
+                 .Select(_ => alphabet[rng.Next(alphabet.Length)]).ToArray());
+    }
+  }
+
+  static class JwtHelper
+  {
+    public static string CreateToken(User user, IConfiguration config)
+    {
+      var issuer = config["Auth:JwtIssuer"]!;
+      var audience = config["Auth:JwtAudience"]!;
+      var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Auth:JwtKey"]!));
+      var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+      var claims = new[]
+      {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.UniqueName, user.Username)
         };
 
-    var jwt = new JwtSecurityToken(
-        issuer: issuer,
-        audience: audience,
-        claims: claims,
-        notBefore: DateTime.UtcNow,
-        expires: DateTime.UtcNow.AddDays(7),
-        signingCredentials: creds);
+      var jwt = new JwtSecurityToken(
+          issuer: issuer,
+          audience: audience,
+          claims: claims,
+          notBefore: DateTime.UtcNow,
+          expires: DateTime.UtcNow.AddDays(7),
+          signingCredentials: creds);
 
-    return new JwtSecurityTokenHandler().WriteToken(jwt);
+      return new JwtSecurityTokenHandler().WriteToken(jwt);
+    }
   }
 }
