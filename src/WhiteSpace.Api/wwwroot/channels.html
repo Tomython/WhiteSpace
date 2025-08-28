@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WhiteSpace</title>
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">WhiteSpace</div>
+    <nav class="nav">
+      <a href="/index.html">Лента</a>
+      <a href="/channels.html">Каналы</a>
+      <a href="/profile.html">Профиль</a>
+      <a href="/login.html">Войти</a>
+      <a href="/register.html">Регистрация</a>
+      <a href="/diag.html">Диагностика</a>
+    </nav>
+  </header>
+  <main class="container">
+
+<h1>Каналы</h1>
+
+<section class="card">
+  <h2>Создать канал</h2>
+  <form id="channelCreateForm" class="row">
+    <input name="name" placeholder="Название канала" />
+    <label class="row"><input type="checkbox" name="isPrivate" /> Приватный</label>
+    <button type="submit">Создать</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Вступить по коду</h2>
+  <form id="joinChannelForm" class="row">
+    <input name="code" placeholder="Код приглашения" />
+    <button type="submit">Вступить</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Лента канала</h2>
+  <form id="channelFeedForm" class="row">
+    <input name="channelId" placeholder="ID канала (GUID)" class="grow" />
+    <button type="submit">Показать</button>
+  </form>
+  <div id="channelFeed" class="list"></div>
+</section>
+
+  </main>
+  <script src="/assets/ws-core.js"></script>
+  <script src="/assets/app.js"></script>
+</body>
+</html>

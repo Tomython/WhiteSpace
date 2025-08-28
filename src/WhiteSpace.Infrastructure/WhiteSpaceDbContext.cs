@@ -13,6 +13,7 @@ public class WhiteSpaceDbContext : DbContext
     public DbSet<ChannelMember> ChannelMembers => Set<ChannelMember>();
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<Like> Likes => Set<Like>();
+    public DbSet<Follow> Follows => Set<Follow>();
 
   protected override void OnModelCreating(ModelBuilder b)
   {
@@ -29,6 +30,7 @@ public class WhiteSpaceDbContext : DbContext
     {
       e.Property(x => x.Body).HasMaxLength(4000).IsRequired();
       e.HasIndex(x => x.CreatedAt);
+      e.HasIndex(x => x.ChannelId);
     });
 
     b.Entity<Channel>(e =>
@@ -59,6 +61,14 @@ public class WhiteSpaceDbContext : DbContext
       e.HasIndex(x => x.PostId);
       e.HasOne<Post>().WithMany().HasForeignKey(x => x.PostId).OnDelete(DeleteBehavior.Cascade);
       e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+    });
+
+    b.Entity<Follow>(e =>
+    {
+        e.HasKey(x => new { x.FollowerId, x.FolloweeId });
+        e.HasOne<User>().WithMany().HasForeignKey(x => x.FollowerId).OnDelete(DeleteBehavior.Cascade);
+        e.HasOne<User>().WithMany().HasForeignKey(x => x.FolloweeId).OnDelete(DeleteBehavior.Cascade);
+        e.HasIndex(x => x.FolloweeId);
     });
   }
 }

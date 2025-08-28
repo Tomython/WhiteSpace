@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WhiteSpace.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7ed59b2f9ec4c4415b66046d4112e9406f151083")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c68bfc061ac5e0294031c0867f8ede6db1720455")]
 [assembly: System.Reflection.AssemblyProductAttribute("WhiteSpace.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WhiteSpace.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

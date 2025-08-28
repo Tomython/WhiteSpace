@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WhiteSpace — Diagnostics</title>
+<link rel="stylesheet" href="/assets/style.css">
+<style>
+  pre{background:#0b1020;color:#d1d4de;padding:12px;border-radius:10px;overflow:auto;max-height:260px}
+</style>
+</head>
+<body>
+  <main class="container">
+  <h1>Диагностика</h1>
+  <section class="card">
+    <div class="row">
+      <label>API Base:</label>
+      <input id="api" size="40" value="">
+      <button id="save">Save</button>
+      <span>Token: <code id="tok" class="mono">none</code></span>
+    </div>
+    <div class="row"><span class="mono">Origin:</span> <code class="mono" id="orig"></code></div>
+  </section>
+
+  <section class="card">
+    <div class="row">
+      <button id="pingVersion">GET /version</button>
+      <button id="pingHealth">GET /healthz</button>
+      <button id="pingDb">GET /healthz/db</button>
+    </div>
+    <pre id="out1"></pre>
+  </section>
+
+  <section class="card">
+    <div class="row">
+      <input id="regUser" placeholder="username" value="user">
+      <input id="regEmail" placeholder="email" value="user@example.com">
+      <input id="regPass" placeholder="pass" value="pass2">
+      <button id="doRegister">POST /auth/register</button>
+      <button id="doLogin">POST /auth/login</button>
+      <button id="clear">Clear token</button>
+    </div>
+    <pre id="out2"></pre>
+  </section>
+
+  <section class="card">
+    <div class="row">
+      <input id="postBody" size="50" placeholder="hello world">
+      <button id="doPost">POST /posts</button>
+      <button id="getFeed">GET /feed</button>
+    </div>
+    <pre id="out3"></pre>
+  </section>
+  </main>
+  <script src="/assets/ws-core.js"></script>
+  <script>
+  const $ = s => document.querySelector(s);
+  const out1=$('#out1'), out2=$('#out2'), out3=$('#out3');
+  $('#orig').textContent = location.origin;
+  function apiBase(){
+    const saved = localStorage.getItem('API_BASE');
+    return saved && saved.trim() ? saved.trim() : location.origin;
+  }
+  function token(){ return localStorage.getItem('TOKEN') || ''; }
+  function setToken(t){ t? localStorage.setItem('TOKEN',t):localStorage.removeItem('TOKEN'); $('#tok').textContent = token()? token().slice(0,20)+'...' : 'none'; }
+  $('#api').value = localStorage.getItem('API_BASE') || ''; setToken(token());
+  $('#save').onclick = ()=>{ localStorage.setItem('API_BASE',$('#api').value.trim()); log(out1,'Saved API_BASE: '+apiBase()); }
+  $('#clear').onclick = ()=> setToken(null);
+
+  async function call(path, opts={}, target=out1){
+    const base = apiBase();
+    const url = (base.endsWith('/')? base.slice(0,-1):base) + path;
+    const headers = new Headers(opts.headers||{});
+    const method = (opts.method || 'GET').toUpperCase();
+    if (opts.body && !(opts.body instanceof FormData) && method!=='GET' && method!=='HEAD') {
+      headers.set('Content-Type','application/json');
+    }
+    headers.set('Accept','application/json');
+    if (opts.auth && token()) headers.set('Authorization','Bearer '+token());
+    try{
+      const r = await fetch(url, { ...opts, method, headers });
+      const text = await r.text();
+      log(target, url + " -> " + r.status + " " + r.statusText + "\n" + text);
+      try{ return JSON.parse(text);}catch{return text;}
+    }catch(e){ log(target,'ERR '+(e?.message||e)); return null; }
+  }
+  function log(el,s){ el.textContent = s; }
+  $('#pingVersion').onclick = ()=> call('/version', {}, out1);
+  $('#pingHealth').onclick = ()=> call('/healthz', {}, out1);
+  $('#pingDb').onclick = ()=> call('/healthz/db', {}, out1);
+
+  $('#doRegister').onclick = async () => {
+    const res = await call('/auth/register', { method:'POST', body: JSON.stringify({
+      username: $('#regUser').value.trim(), email: $('#regEmail').value.trim(), password: $('#regPass').value
+    })}, out2);
+    if (res && res.token) setToken(res.token);
+  };
+  $('#doLogin').onclick = async () => {
+    const res = await call('/auth/login', { method:'POST', body: JSON.stringify({
+      usernameOrEmail: $('#regUser').value.trim(), password: $('#regPass').value
+    })}, out2);
+    if (res && res.token) setToken(res.token);
+  };
+  $('#doPost').onclick = ()=> call('/posts', { method:'POST', auth:true, body: JSON.stringify({ body: $('#postBody').value })}, out3);
+  $('#getFeed').onclick = ()=> call('/feed?skip=0&take=10', {}, out3);
+  </script>
+</body>
+</html>

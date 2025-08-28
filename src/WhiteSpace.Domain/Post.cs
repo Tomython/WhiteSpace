@@ -6,4 +6,5 @@ public class Post
     public Guid AuthorId { get; set; }
     public string Body { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public Guid? ChannelId { get; set; }  // null = общий фид
 }

@@ -96,6 +96,24 @@ namespace WhiteSpace.Infrastructure.Migrations
                     b.ToTable("Comments");
                 });
 
+            modelBuilder.Entity("WhiteSpace.Domain.Follow", b =>
+                {
+                    b.Property<Guid>("FollowerId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("FolloweeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("FollowerId", "FolloweeId");
+
+                    b.HasIndex("FolloweeId");
+
+                    b.ToTable("Follows");
+                });
+
             modelBuilder.Entity("WhiteSpace.Domain.Like", b =>
                 {
                     b.Property<Guid>("PostId")
@@ -130,10 +148,15 @@ namespace WhiteSpace.Infrastructure.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("ChannelId")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ChannelId");
 
                     b.HasIndex("CreatedAt");
 
@@ -185,6 +208,21 @@ namespace WhiteSpace.Infrastructure.Migrations
                     b.HasOne("WhiteSpace.Domain.Post", null)
                         .WithMany()
                         .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("WhiteSpace.Domain.Follow", b =>
+                {
+                    b.HasOne("WhiteSpace.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("FolloweeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WhiteSpace.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("FollowerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

@@ -1,0 +1,22 @@
+# build
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# OS/IDE
+.DS_Store
+.idea/
+*.iml
+
+# secrets & local env
+**/appsettings.Local.json
+**/secrets.json
+
+# local DB
+*.db
+whitespace-dev.db
+
+# archives
+*.zip
